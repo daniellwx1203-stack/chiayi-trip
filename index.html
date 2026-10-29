@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>作伙底嘉 | 嘉義秋季之旅</title>
+    
+    <!-- Google Fonts: Noto Serif TC (侘寂風襯線體) & Noto Sans TC (無襯線體) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config for Wabi-Sabi -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wabi: {
+                            bg: '#EAE6DF',      // 溫潤大地底色
+                            text: '#3A3632',    // 碳灰色
+                            textLight: '#7A7369',// 輔助文字
+                            moss: '#6B7A60',    // 苔蘚綠
+                            clay: '#A68A6D',    // 陶土棕
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #EAE6DF;
+            color: #3A3632;
+            -webkit-tap-highlight-color: transparent;
+            /* 極淡的背景紋理提升侘寂感 */
+            background-image: radial-gradient(#D5CFC4 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        ::-webkit-scrollbar { display: none; }
+        
+        /* 現代通透感 (Glassmorphism) */
+        .glass-panel {
+            background: rgba(253, 252, 250, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 40px -10px rgba(58, 54, 50, 0.08);
+        }
+
+        .glass-nav {
+            background: rgba(234, 230, 223, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* 頁面切換動畫 */
+        .view-section {
+            display: none;
+            animation: floatUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .view-section.active {
+            display: block;
+        }
+        
+        @keyframes floatUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 模態視窗動畫 */
+        .modal {
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            transform: translateY(20px) scale(0.98);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col overflow-hidden relative">
+
+    <!-- ==================== 初始歡迎頁面 (Splash Screen) ==================== -->
+    <div id="intro-screen" class="fixed inset-0 z-50 flex items-center justify-center transition-all duration-1000 bg-cover bg-center" style="background-image: url('./嘉義背景圖＿首頁.jpg');">
+        <!-- 遮罩讓文字與按鈕更清晰 -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+        
+        <div class="relative z-10 text-center flex flex-col items-center">
+            <p class="font-serif text-white/90 tracking-[0.4em] mb-6 text-sm drop-shadow-md">2026 CHIAYI AUTUMN TRIP</p>
+            
+            <button onclick="enterApp()" class="glass-panel px-12 py-5 rounded-full text-3xl font-serif text-wabi-text hover:bg-white/95 transition-all shadow-2xl transform hover:-translate-y-1 flex items-center gap-4 group font-bold">
+                作伙底嘉 
+                <i class="fa-solid fa-arrow-right text-lg text-wabi-moss group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 背景裝飾光暈 -->
+    <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-wabi-moss/10 rounded-full blur-[80px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[10%] right-[-10%] w-96 h-96 bg-wabi-clay/10 rounded-full blur-[80px] pointer-events-none z-0"></div>
+
+    <!-- ==================== 主要應用程式 (Main App) ==================== -->
+    <div id="main-app" class="flex-1 overflow-y-auto relative z-10 hidden pb-28">
+        
+        <!-- 1. 首頁總覽 (Home) -->
+        <section id="view-home" class="view-section active max-w-2xl mx-auto px-5 py-12">
+            <header class="mb-10 text-center mt-6">
+                <h1 class="text-4xl font-serif text-wabi-text mb-3 font-bold">作伙底嘉</h1>
+                <p class="text-sm text-wabi-clay tracking-[0.2em]">嘉義秋季之旅</p>
+            </header>
+
+            <div class="glass-panel rounded-[2rem] p-8 md:p-12 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-wabi-clay/5 rounded-bl-full"></div>
+                <div class="absolute bottom-0 left-0 w-32 h-32 bg-wabi-moss/5 rounded-tr-full"></div>
+                
+                <div class="relative z-10 space-y-6">
+                    <div>
+                        <p class="text-xs text-wabi-textLight tracking-widest mb-1">旅行日期</p>
+                        <p class="text-xl font-serif text-wabi-text font-bold">10/31 (六) - 11/01 (日)</p>
+                    </div>
+                    
+                    <div class="w-16 h-[1px] bg-wabi-text/10 mx-auto"></div>
+                    
+                    <div>
+                        <p class="text-xs text-wabi-textLight tracking-widest mb-2">交通資訊</p>
+                        <p class="text-base text-wabi-text flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-car text-wabi-moss"></i> Lexus NX200 (司機：丹尼爾)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 第一天 (Day 1) -->
+        <section id="view-day1" class="view-section max-w-2xl mx-auto px-5 py-10">
+            <header class="mb-8 text-center">
+                <h2 class="text-3xl font-serif text-wabi-text mb-2 font-bold">第一日</h2>
+                <p class="text-xs text-wabi-textLight tracking-[0.2em]">10 月 31 日 ・ 星期六</p>
+            </header>
+
+            <div class="glass-panel rounded-[2rem] p-6 md:p-10 relative overflow-hidden">
+                <div class="relative border-l-2 border-wabi-text/10 ml-2 md:ml-4 space-y-10 pb-4">
+                    
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">08:30</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">五股出發</h4>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">08:50</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">新北產業園區站</h4>
+                        <p class="text-sm text-wabi-textLight mt-1">接 Remi & Remi’s Friend</p>
+                        <div class="flex gap-2 mt-3">
+                            <a href="https://maps.apple.com/?q=新北產業園區站" target="_blank" class="text-[11px] px-3 py-1.5 bg-white/50 backdrop-blur border border-white rounded-full text-wabi-text hover:bg-wabi-moss hover:text-white transition-all shadow-sm"><i class="fa-brands fa-apple mr-1"></i>Apple Maps</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=新北產業園區站" target="_blank" class="text-[11px] px-3 py-1.5 bg-white/50 backdrop-blur border border-white rounded-full text-wabi-text hover:bg-wabi-moss hover:text-white transition-all shadow-sm"><i class="fa-brands fa-google mr-1"></i>Google</a>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">10:00</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">中壢</h4>
+                        <p class="text-sm text-wabi-textLight mt-1">接 Ophelia</p>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-wabi-clay shadow-sm ring-4 ring-wabi-clay/20"></div>
+                        <div class="text-xs text-wabi-clay font-serif mb-1.5 tracking-widest font-bold">12:00 - 13:40</div>
+                        <h4 class="text-xl font-serif text-wabi-text mb-3 font-bold">抵達嘉義・雞肉飯路跑</h4>
+                        <p class="text-sm text-wabi-textLight mb-4 leading-relaxed">嘉義三大名店品嚐之旅。</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button onclick="openMenuModal('liulichang')" class="text-xs py-2 px-4 bg-white/80 border border-white rounded-lg shadow-sm hover:border-wabi-clay hover:bg-white transition-all flex items-center gap-2 font-medium text-wabi-text"><i class="fa-solid fa-bowl-rice text-wabi-clay"></i> 劉里長菜單</button>
+                            <button onclick="openMenuModal('ahongshi')" class="text-xs py-2 px-4 bg-white/80 border border-white rounded-lg shadow-sm hover:border-wabi-clay hover:bg-white transition-all flex items-center gap-2 font-medium text-wabi-text"><i class="fa-solid fa-bowl-rice text-wabi-clay"></i> 阿宏師菜單</button>
+                            <button onclick="openMenuModal('aloushi')" class="text-xs py-2 px-4 bg-white/80 border border-white rounded-lg shadow-sm hover:border-wabi-clay hover:bg-white transition-all flex items-center gap-2 font-medium text-wabi-text"><i class="fa-solid fa-bowl-rice text-wabi-clay"></i> 阿樓師菜單</button>
+                        </div>
+                        
+                        <a href="https://maps.apple/p/joFDBwsPufLC4.z" target="_blank" class="inline-flex items-center text-[11px] px-3 py-1.5 bg-[#EAE6DF] border border-white rounded-full text-wabi-text shadow-inner hover:bg-wabi-clay hover:text-white transition-colors"><i class="fa-brands fa-apple mr-2 text-wabi-moss group-hover:text-white"></i>日月亭(吳鳳停車場) Apple Maps</a>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">14:00</div>
+                        <h4 class="text-lg font-serif text-wabi-text mb-3 font-bold">大全聯採買 / 榮興飲料</h4>
+                        <button onclick="openMenuModal('rongxing')" class="text-xs px-4 py-2 bg-wabi-text text-white rounded-full hover:bg-wabi-textLight transition-colors shadow-md flex items-center gap-2"><i class="fa-solid fa-leaf"></i> 榮興茶行菜單</button>
+                    </div>
+
+                    <div class="relative pl-8 bg-wabi-moss/5 -ml-4 p-4 rounded-2xl border border-wabi-moss/10">
+                        <div class="absolute left-[7px] top-5 w-4 h-4 rounded-full bg-wabi-moss shadow-sm ring-4 ring-wabi-moss/20"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold pl-4">15:00</div>
+                        <h4 class="text-xl font-serif text-wabi-text font-bold pl-4">歸樸生活 Check in</h4>
+                        <p class="text-sm text-wabi-textLight mt-2 pl-4">抵達營區，下午茶時間。</p>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">18:00</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">烤肉 ＆ 火鍋 ＆ 桌遊</h4>
+                        <p class="text-sm text-wabi-textLight mt-1">烤肉爐使用至 21:00前。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 第二天 (Day 2) -->
+        <section id="view-day2" class="view-section max-w-2xl mx-auto px-5 py-10">
+            <header class="mb-8 text-center">
+                <h2 class="text-3xl font-serif text-wabi-text mb-2 font-bold">第二日</h2>
+                <p class="text-xs text-wabi-textLight tracking-[0.2em]">11 月 01 日 ・ 星期日</p>
+            </header>
+
+            <div class="glass-panel rounded-[2rem] p-6 md:p-10 relative overflow-hidden">
+                <div class="relative border-l-2 border-wabi-text/10 ml-2 md:ml-4 space-y-10 pb-4">
+                    
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">09:00 - 10:00</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">早餐 Time</h4>
+                    </div>
+                    
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">11:00</div>
+                        <h4 class="text-lg font-serif text-wabi-text font-bold">退房</h4>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-wabi-clay shadow-sm ring-4 ring-wabi-clay/20"></div>
+                        <div class="text-xs text-wabi-clay font-serif mb-1.5 tracking-widest font-bold">12:00</div>
+                        <h4 class="text-xl font-serif text-wabi-text mb-3 font-bold">午餐：鴨肉羹麵 (暫定)</h4>
+                        <button onclick="openMenuModal('liji')" class="text-xs px-4 py-2 bg-white/80 border border-white rounded-full flex items-center gap-2 hover:border-wabi-clay transition-all shadow-sm mb-3 font-medium"><i class="fa-solid fa-scroll text-wabi-clay"></i> 北港李記鴨肉羹菜單</button>
+                        
+                        <div class="flex gap-2">
+                            <a href="https://maps.apple.com/?q=北港李記生炒鴨肉羹" target="_blank" class="text-[11px] px-3 py-1.5 bg-white/50 backdrop-blur border border-white rounded-full text-wabi-text hover:bg-wabi-clay hover:text-white transition-colors"><i class="fa-brands fa-apple mr-1"></i>Apple Maps</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=北港李記生炒鴨肉羹" target="_blank" class="text-[11px] px-3 py-1.5 bg-white/50 backdrop-blur border border-white rounded-full text-wabi-text hover:bg-wabi-clay hover:text-white transition-colors"><i class="fa-brands fa-google mr-1"></i>Google</a>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-textLight shadow-sm"></div>
+                        <div class="text-xs text-wabi-textLight font-serif mb-1.5 tracking-widest font-bold">13:00 - 15:00</div>
+                        <h4 class="text-lg font-serif text-wabi-textLight italic font-bold">行程tbc</h4>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#EAE6DF] border-2 border-wabi-moss shadow-sm"></div>
+                        <div class="text-xs text-wabi-moss font-serif mb-1.5 tracking-widest font-bold">16:30</div>
+                        <h4 class="text-lg font-serif text-wabi-text mb-3 font-bold">高美濕地</h4>
+                        <div class="flex gap-2">
+                            <a href="https://maps.apple.com/?q=高美濕地" target="_blank" class="text-[11px] px-3 py-1.5 bg-white/50 backdrop-blur border border-white rounded-full text-wabi-text hover:bg-wabi-moss hover:text-white transition-colors"><i class="fa-brands fa-apple mr-1"></i>Apple Maps</a>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-wabi-text shadow-sm ring-4 ring-wabi-text/20"></div>
+                        <div class="text-xs text-wabi-text font-serif mb-1.5 tracking-widest font-bold">17:30</div>
+                        <h4 class="text-xl font-serif text-wabi-text font-bold">返程</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 住宿資訊 (Info) -->
+        <section id="view-info" class="view-section max-w-2xl mx-auto px-5 py-10">
+            <header class="mb-8 text-center">
+                <h2 class="text-3xl font-serif text-wabi-text mb-2 font-bold">歸樸生活</h2>
+                <p class="text-xs text-wabi-textLight tracking-[0.2em]">住宿與營區須知</p>
+            </header>
+
+            <div class="space-y-5">
+                <button onclick="openInfoModal('rules')" class="w-full glass-panel p-8 rounded-[2rem] text-left hover:border-wabi-moss transition-all group flex justify-between items-center transform hover:-translate-y-1">
+                    <div>
+                        <h3 class="font-serif text-2xl text-wabi-text mb-2 font-bold"><i class="fa-solid fa-book-open text-wabi-clay mr-3"></i>入住須知</h3>
+                        <p class="text-sm text-wabi-textLight">時間規範、營區公約與注意事項</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-wabi-moss transition-colors">
+                        <i class="fa-solid fa-arrow-right text-wabi-text group-hover:text-white transition-colors"></i>
+                    </div>
+                </button>
+
+                <button onclick="openInfoModal('equip')" class="w-full glass-panel p-8 rounded-[2rem] text-left hover:border-wabi-moss transition-all group flex justify-between items-center transform hover:-translate-y-1">
+                    <div>
+                        <h3 class="font-serif text-2xl text-wabi-text mb-2 font-bold"><i class="fa-solid fa-box-open text-wabi-clay mr-3"></i>裝備表</h3>
+                        <p class="text-sm text-wabi-textLight">營區提供設備清單與自備建議</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-white/50 flex items-center justify-center group-hover:bg-wabi-moss transition-colors">
+                        <i class="fa-solid fa-arrow-right text-wabi-text group-hover:text-white transition-colors"></i>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ==================== 底部固定導航列 (Tab Bar) ==================== -->
+    <!-- 預設隱藏，進入App後由JS顯示 -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full glass-nav z-40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.03)] hidden">
+        <div class="max-w-md mx-auto flex justify-between px-6 py-4">
+            <button onclick="switchTab('home')" id="tab-home" class="tab-btn flex flex-col items-center gap-1.5 text-wabi-moss transition-all w-16">
+                <i class="fa-solid fa-house text-xl"></i>
+                <span class="text-[10px] font-sans tracking-widest font-medium">首頁</span>
+            </button>
+            <button onclick="switchTab('day1')" id="tab-day1" class="tab-btn flex flex-col items-center gap-1.5 text-wabi-textLight hover:text-wabi-moss transition-all w-16">
+                <i class="fa-regular fa-calendar text-xl"></i>
+                <span class="text-[10px] font-sans tracking-widest font-medium">第一天</span>
+            </button>
+            <button onclick="switchTab('day2')" id="tab-day2" class="tab-btn flex flex-col items-center gap-1.5 text-wabi-textLight hover:text-wabi-moss transition-all w-16">
+                <i class="fa-regular fa-calendar-check text-xl"></i>
+                <span class="text-[10px] font-sans tracking-widest font-medium">第二天</span>
+            </button>
+            <button onclick="switchTab('info')" id="tab-info" class="tab-btn flex flex-col items-center gap-1.5 text-wabi-textLight hover:text-wabi-moss transition-all w-16">
+                <i class="fa-solid fa-campground text-xl"></i>
+                <span class="text-[10px] font-sans tracking-widest font-medium">住宿</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== 共用彈出視窗 (Modal) ==================== -->
+    <div id="common-modal" class="modal fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-md p-0 md:p-4">
+        <!-- 點擊背景關閉 -->
+        <div class="absolute inset-0" onclick="closeModal()"></div>
+        
+        <div class="modal-content glass-panel w-full max-w-lg md:rounded-3xl rounded-t-[2rem] relative flex flex-col max-h-[85vh] border-b-0 md:border-b">
+            
+            <div class="flex justify-between items-center p-6 border-b border-white/40 relative">
+                <h3 class="text-xl font-serif text-wabi-text font-bold" id="modal-title">標題</h3>
+                <button onclick="closeModal()" class="bg-white/50 text-wabi-text hover:bg-white transition-colors w-8 h-8 rounded-full flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-times text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow text-wabi-text text-sm leading-relaxed custom-scrollbar" id="modal-body">
+                <!-- JS 動態注入內容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== Scripts ==================== -->
+    <script>
+        // --- 1. 進入App邏輯 ---
+        function enterApp() {
+            const introScreen = document.getElementById('intro-screen');
+            const mainApp = document.getElementById('main-app');
+            const bottomNav = document.getElementById('bottom-nav');
+            
+            // 淡出歡迎頁
+            introScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                introScreen.style.display = 'none';
+                
+                // 顯示主要內容與導航列
+                mainApp.classList.remove('hidden');
+                bottomNav.classList.remove('hidden');
+                
+            }, 800); // 配合 CSS transition
+        }
+
+        // --- 2. Tab 切換邏輯 ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-wabi-moss');
+                el.classList.add('text-wabi-textLight');
+            });
+            
+            document.getElementById('view-' + tabName).classList.add('active');
+            const activeBtn = document.getElementById('tab-' + tabName);
+            activeBtn.classList.remove('text-wabi-textLight');
+            activeBtn.classList.add('text-wabi-moss');
+            
+            document.getElementById('main-app').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 3. 模態視窗 (Modal) 資料庫 ---
+        const modalData = {
+            menus: {
+                'liulichang': {
+                    title: "劉里長火雞肉飯",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">飯類</h4>
+                            <p class="flex justify-between py-1"><span>火雞肉片飯</span><span class="font-medium">$60</span></p>
+                            <p class="flex justify-between py-1"><span>火雞肉絲飯</span><span class="font-medium">$35</span></p>
+                            <p class="flex justify-between py-1"><span>無刺虱目魚粥</span><span class="font-medium">$80</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">滷味與涼菜</h4>
+                            <p class="flex justify-between py-1"><span>切火雞肉</span><span class="font-medium">$90</span></p>
+                            <p class="flex justify-between py-1"><span>皮蛋豆腐 / 綠花椰菜</span><span class="font-medium">$35</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">湯類</h4>
+                            <p class="flex justify-between py-1"><span>骨仔肉湯 / 蝦仁湯</span><span class="font-medium">$40</span></p></div>
+                        </div>`
+                },
+                'ahongshi': {
+                    title: "阿宏師火雞肉飯",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">飯類與肉盤</h4>
+                            <p class="flex justify-between py-1"><span>火雞肉飯 (大/小)</span><span class="font-medium">$35 / $30</span></p>
+                            <p class="flex justify-between py-1"><span>火雞片飯</span><span class="font-medium">$60</span></p>
+                            <p class="flex justify-between py-1"><span>火雞肉盤 (大/小)</span><span class="font-medium">$160 / $80</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">湯與小菜</h4>
+                            <p class="flex justify-between py-1"><span>下水湯 / 雞腳湯</span><span class="font-medium">$40</span></p>
+                            <p class="flex justify-between py-1"><span>白菜滷 / 涼拌豬肝</span><span class="font-medium">$35</span></p></div>
+                        </div>`
+                },
+                'aloushi': {
+                    title: "阿樓師火雞肉飯",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">招牌</h4>
+                            <p class="flex justify-between py-1"><span>內用肉片飯</span><span class="font-medium">$45</span></p>
+                            <p class="flex justify-between py-1"><span>火雞肉飯 (大/小)</span><span class="font-medium">$30 / $25</span></p>
+                            <p class="flex justify-between py-1"><span>火雞肉片盤</span><span class="font-medium">$50</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">湯類</h4>
+                            <p class="flex justify-between py-1"><span>下水湯 / 火雞腳湯</span><span class="font-medium">$20</span></p>
+                            <p class="flex justify-between py-1"><span>味噌湯 / 豬血湯</span><span class="font-medium">$15</span></p></div>
+                        </div>`
+                },
+                'rongxing': {
+                    title: "榮興茶行",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">純茶 (M/L)</h4>
+                            <p class="flex justify-between py-1"><span>仙女</span><span class="font-medium">$35 / 40</span></p>
+                            <p class="flex justify-between py-1"><span>茉莉 / 四季 / 烏龍</span><span class="font-medium">$30 / 35</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">奶類與特調 (M/L)</h4>
+                            <p class="flex justify-between py-1"><span>鍋煮鮮奶茶</span><span class="font-medium">$50 / 60</span></p>
+                            <p class="flex justify-between py-1"><span>仙女奶茶 / 烏龍奶茶</span><span class="font-medium">$45 / 55</span></p>
+                            <p class="flex justify-between py-1"><span>雷孟仙女</span><span class="font-medium">$45 / 55</span></p></div>
+                        </div>`
+                },
+                'liji': {
+                    title: "北港李記生炒鴨肉羹",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">主食與羹湯 (一碗/大碗)</h4>
+                            <p class="flex justify-between py-1"><span>生炒鴨肉羹 (店內招牌)</span><span class="font-medium">$40 / $60</span></p>
+                            <p class="flex justify-between py-1"><span>鴨骨麵線 (達人推薦)</span><span class="font-medium">$25 / $35</span></p>
+                            <p class="flex justify-between py-1"><span>鴨肉飯</span><span class="font-medium">$25 / $35</span></p></div>
+                            <div class="bg-white/40 p-4 rounded-xl border border-white/50"><h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold">切盤與小菜</h4>
+                            <p class="flex justify-between py-1"><span>鴨肉切盤 (大/中/小)</span><span class="font-medium">$180/120/60</span></p>
+                            <p class="flex justify-between py-1"><span>鴨肝湯 / 下水湯</span><span class="font-medium">$35</span></p></div>
+                        </div>`
+                }
+            },
+            info: {
+                'rules': {
+                    title: "入住須知與公約",
+                    content: `
+                        <ul class="space-y-5 list-none text-wabi-text p-2">
+                            <li class="flex gap-4"><div class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center shadow-sm shrink-0"><i class="fa-regular fa-clock text-wabi-clay"></i></div> <div><strong>時間規範</strong><br><span class="text-wabi-textLight leading-relaxed block mt-1">當日 15:00 入住，隔日上午 11:00 離場。超時將酌收費用。</span></div></li>
+                            <li class="flex gap-4"><div class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center shadow-sm shrink-0"><i class="fa-solid fa-ban text-wabi-clay"></i></div> <div><strong>帳篷規範</strong><br><span class="text-wabi-textLight leading-relaxed block mt-1">帳篷內嚴禁飲食、使用高功率電器。</span></div></li>
+                            <li class="flex gap-4"><div class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center shadow-sm shrink-0"><i class="fa-solid fa-volume-low text-wabi-clay"></i></div> <div><strong>營區寧靜</strong><br><span class="text-wabi-textLight leading-relaxed block mt-1">22:00 後請降低音量，禁止使用擴音設備。</span></div></li>
+                            <li class="flex gap-4"><div class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center shadow-sm shrink-0"><i class="fa-solid fa-utensils text-wabi-clay"></i></div> <div><strong>餐點時間</strong><br><span class="text-wabi-textLight leading-relaxed block mt-1">下午茶 15:00-17:00 / 手作活動 16:00-17:00 / 早餐 08:00-10:00 / 晚餐烤肉爐限至 21:00 前。</span></div></li>
+                            <li class="flex gap-4"><div class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center shadow-sm shrink-0"><i class="fa-solid fa-phone text-wabi-clay"></i></div> <div><strong>聯絡方式</strong><br><span class="text-wabi-textLight leading-relaxed block mt-1">管理室：05-259-0158 (緊急：0978-833658)</span></div></li>
+                        </ul>`
+                },
+                'equip': {
+                    title: "超完整裝備表",
+                    content: `
+                        <div class="space-y-6">
+                            <div class="bg-white/40 p-5 rounded-2xl border border-white/50">
+                                <h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold flex items-center gap-2"><i class="fa-solid fa-fire-burner"></i>設備提供</h4>
+                                <p class="text-wabi-textLight leading-relaxed">提供美式烤肉爐、瓦斯爐、鍋碗餐具（平底鍋、湯鍋、刀具、砧板等）。<br>不需自備火種或木炭。管理室有提供冰箱冷凍冷藏，另可索取蚊香。</p>
+                            </div>
+                            <div class="bg-white/40 p-5 rounded-2xl border border-white/50">
+                                <h4 class="font-serif border-b border-wabi-text/10 pb-2 mb-3 text-wabi-moss font-bold flex items-center gap-2"><i class="fa-solid fa-shower"></i>衛浴與客房</h4>
+                                <p class="text-wabi-textLight leading-relaxed">24hr熱水共用衛浴，附吹風機、洗沐用品。<br>客房設備含茶几、冷暖氣、網路電視(已登入Netflix/YT)。</p>
+                            </div>
+                            <div class="bg-[#EAE6DF]/80 p-4 rounded-xl text-center border border-white/50 shadow-inner">
+                                <span class="text-wabi-clay font-bold tracking-widest">※ 注意事項 ※</span><br>
+                                <span class="text-wabi-textLight text-xs mt-2 block">因應環保政策，不提供一次性備品（請自備毛巾、牙刷、牙膏）。</span>
+                            </div>
+                        </div>`
+                }
+            }
+        };
+
+        const modal = document.getElementById('common-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+
+        function openMenuModal(id) {
+            const data = modalData.menus[id];
+            modalTitle.innerHTML = `<i class="fa-solid fa-store text-wabi-clay mr-2"></i>${data.title}`;
+            modalBody.innerHTML = data.content;
+            modal.classList.add('active');
+        }
+
+        function openInfoModal(id) {
+            const data = modalData.info[id];
+            modalTitle.innerHTML = data.title;
+            modalBody.innerHTML = data.content;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
